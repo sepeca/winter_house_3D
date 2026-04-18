@@ -21,6 +21,13 @@ public class SnowSystem implements Model {
     private final float cloudSize = 6.0f;
     private final float cloudHeight = 15.0f;
 
+    private final int ROOF_GRID_SIZE = 24;
+    private float[][] roofSnowGrid = new float[ROOF_GRID_SIZE][ROOF_GRID_SIZE];
+
+    public float[][] getRoofSnowGrid() {
+        return roofSnowGrid;
+    }
+
     public SnowSystem() {
         for (int i = 0; i < MAX_PARTICLES; i++) {
             resetParticle(i, true);
@@ -48,19 +55,42 @@ public class SnowSystem implements Model {
             y[i] -= speed[i] * dt;
             x[i] += (float) Math.sin(y[i]) * dt * 0.5f;
 
-            if (y[i] <= 0) {
-                int col = (int) (((x[i] + WORLD_SIZE) / (WORLD_SIZE * 2)) * GRID_SIZE);
-                int row = (int) (((z[i] + WORLD_SIZE) / (WORLD_SIZE * 2)) * GRID_SIZE);
+            float surfaceY = getSurfaceHeight(x[i], z[i]);
 
-                if (col >= 0 && col < GRID_SIZE && row >= 0 && row < GRID_SIZE) {
-                    if (snowGrid[row][col] < 1.0f) {
-                        snowGrid[row][col] += 0.05f;
+            if (y[i] <= surfaceY) {
+
+                if (surfaceY == 0.0f) {
+                    int col = (int) (((x[i] + WORLD_SIZE) / (WORLD_SIZE * 2)) * GRID_SIZE);
+                    int row = (int) (((z[i] + WORLD_SIZE) / (WORLD_SIZE * 2)) * GRID_SIZE);
+
+                    if (col >= 0 && col < GRID_SIZE && row >= 0 && row < GRID_SIZE) {
+                        if (snowGrid[row][col] < 1.0f) {
+                            snowGrid[row][col] += 0.01f;
+                        }
+                    }
+                } else {
+                    int col = (int) (((x[i] + 4.8f) / 9.6f) * ROOF_GRID_SIZE);
+                    int row = (int) (((z[i] + 9.8f) / 9.6f) * ROOF_GRID_SIZE);
+
+                    if (col >= 0 && col < ROOF_GRID_SIZE && row >= 0 && row < ROOF_GRID_SIZE) {
+                        if (roofSnowGrid[row][col] < 1.0f) {
+                            roofSnowGrid[row][col] += 0.01f;
+                        }
                     }
                 }
 
                 resetParticle(i, false);
             }
         }
+    }
+    private float getSurfaceHeight(float px, float pz) {
+
+        if (px > -4.8f && px < 4.8f && pz > -9.8f && pz < -0.2f) {
+
+            float height = 7.2f - (Math.abs(px) / 4.8f) * (7.2f - 3.36f);
+            return height;
+        }
+        return 0.0f;
     }
 
     @Override

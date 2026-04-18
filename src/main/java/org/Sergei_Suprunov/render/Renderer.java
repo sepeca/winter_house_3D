@@ -85,6 +85,9 @@ public class Renderer {
         }
 
         for (Model model : models) {
+            if (model instanceof House) {
+                ((House) model).setRoofSnowGrid(snowSystem.getRoofSnowGrid());
+            }
             model.draw();
         }
         if (snowSystem != null) {

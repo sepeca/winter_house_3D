@@ -9,6 +9,15 @@ public class House implements Model {
     private OGLTexture2D textureRoofSlopes;
     private OGLTexture2D textureRoofFronton;
     private OGLTexture2D textureDoor;
+    private float[][] roofSnowGrid;
+
+    public void setRoofSnowGrid(float[][] grid) {
+        this.roofSnowGrid = grid;
+    }
+
+    private float getLocalRoofY(float localX) {
+        return 1.8f - (Math.abs(localX) / 1.2f) * (1.8f - 0.84f);
+    }
 
     public House() {
         try {
@@ -80,6 +89,43 @@ public class House implements Model {
         glEnd();
 
         if (textureRoofSlopes != null) glDisable(GL_TEXTURE_2D);
+
+        if (roofSnowGrid != null) {
+            glEnable(GL_BLEND);
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+            glDisable(GL_TEXTURE_2D);
+
+            glPushMatrix();
+            glTranslatef(0.0f, 0.01f, 0.0f);
+
+            int GRID_SIZE = roofSnowGrid.length;
+            float cellW = 2.4f / GRID_SIZE;
+            float cellD = 2.4f / GRID_SIZE;
+
+            glBegin(GL_QUADS);
+            for (int row = 0; row < GRID_SIZE; row++) {
+                for (int col = 0; col < GRID_SIZE; col++) {
+                    float opacity = roofSnowGrid[row][col];
+                    if (opacity > 0.0f) {
+                        glColor4f(1.0f, 1.0f, 1.0f, opacity);
+
+                        float startX = -1.2f + col * cellW;
+                        float endX = startX + cellW;
+                        float startZ = -1.2f + row * cellD;
+                        float endZ = startZ + cellD;
+
+                        glVertex3f(startX, getLocalRoofY(startX), startZ);
+                        glVertex3f(startX, getLocalRoofY(startX), endZ);
+                        glVertex3f(endX,   getLocalRoofY(endX),   endZ);
+                        glVertex3f(endX,   getLocalRoofY(endX),   startZ);
+                    }
+                }
+            }
+            glEnd();
+
+            glPopMatrix();
+            glDisable(GL_BLEND);
+        }
     }
 
     private void drawWalls() {
