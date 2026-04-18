@@ -2,6 +2,7 @@ package org.Sergei_Suprunov.render;
 
 import org.Sergei_Suprunov.models.Ground;
 import org.Sergei_Suprunov.models.Model;
+import org.Sergei_Suprunov.models.Skybox;
 import org.Sergei_Suprunov.utils.GLCamera;
 import org.joml.Matrix4f;
 import org.lwjgl.glfw.*;
@@ -21,6 +22,7 @@ public class Renderer {
     private int height = 600;
 
     private GLCamera camera;
+    private Skybox skybox;
     private List<Model> models;
 
     private final Set<Integer> pressedKeys = new HashSet<>();
@@ -38,6 +40,7 @@ public class Renderer {
         glEnable(GL_DEPTH_TEST);
 
         camera = new GLCamera();
+        skybox = new Skybox();
 
         models = new ArrayList<>();
         models.add(new Ground());
@@ -67,7 +70,16 @@ public class Renderer {
             glMatrixMode(GL_PROJECTION);
             glLoadMatrixf(projection.get(stack.mallocFloat(16)));
 
+            Matrix4f viewRotationOnly = new Matrix4f(camera.getViewMatrix());
+            viewRotationOnly.setTranslation(0, 0, 0);
+
             glMatrixMode(GL_MODELVIEW);
+            glLoadMatrixf(viewRotationOnly.get(stack.mallocFloat(16)));
+
+            glDepthMask(false);
+            skybox.draw();
+            glDepthMask(true);
+
             Matrix4f view = camera.getViewMatrix();
             glLoadMatrixf(view.get(stack.mallocFloat(16)));
         }
