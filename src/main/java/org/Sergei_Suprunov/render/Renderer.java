@@ -1,6 +1,7 @@
 package org.Sergei_Suprunov.render;
 
 import org.Sergei_Suprunov.models.Ground;
+import org.Sergei_Suprunov.models.House;
 import org.Sergei_Suprunov.models.Model;
 import org.Sergei_Suprunov.models.Skybox;
 import org.Sergei_Suprunov.utils.GLCamera;
@@ -44,6 +45,7 @@ public class Renderer {
 
         models = new ArrayList<>();
         models.add(new Ground());
+        models.add(new House());
 
         lastFrameTime = glfwGetTime();
     }
