@@ -1,9 +1,6 @@
 package org.Sergei_Suprunov.render;
 
-import org.Sergei_Suprunov.models.Ground;
-import org.Sergei_Suprunov.models.House;
-import org.Sergei_Suprunov.models.Model;
-import org.Sergei_Suprunov.models.Skybox;
+import org.Sergei_Suprunov.models.*;
 import org.Sergei_Suprunov.utils.GLCamera;
 import org.joml.Matrix4f;
 import org.lwjgl.glfw.*;
@@ -25,7 +22,7 @@ public class Renderer {
     private GLCamera camera;
     private Skybox skybox;
     private List<Model> models;
-
+    private SnowSystem snowSystem;
     private final Set<Integer> pressedKeys = new HashSet<>();
     private boolean isMousePressed = false;
     private double lastX = -1.0;
@@ -42,6 +39,7 @@ public class Renderer {
 
         camera = new GLCamera();
         skybox = new Skybox();
+        snowSystem = new SnowSystem();
 
         models = new ArrayList<>();
         models.add(new Ground());
@@ -89,6 +87,10 @@ public class Renderer {
         for (Model model : models) {
             model.draw();
         }
+        if (snowSystem != null) {
+            snowSystem.update(dt);
+            snowSystem.draw();
+        }
     }
 
     private void handleContinuousInput(float dt) {
@@ -99,6 +101,13 @@ public class Renderer {
         if (pressedKeys.contains(GLFW_KEY_D)) camera.right(speed);
         if (pressedKeys.contains(GLFW_KEY_SPACE)) camera.up(speed);
         if (pressedKeys.contains(GLFW_KEY_LEFT_SHIFT)) camera.down(speed);
+        float cloudSpeed = 8.0f * dt;
+        if (snowSystem != null) {
+            if (pressedKeys.contains(GLFW_KEY_UP)) snowSystem.moveCloud(0, -cloudSpeed);
+            if (pressedKeys.contains(GLFW_KEY_DOWN)) snowSystem.moveCloud(0, cloudSpeed);
+            if (pressedKeys.contains(GLFW_KEY_LEFT)) snowSystem.moveCloud(-cloudSpeed, 0);
+            if (pressedKeys.contains(GLFW_KEY_RIGHT)) snowSystem.moveCloud(cloudSpeed, 0);
+        }
     }
 
     public void dispose() {
