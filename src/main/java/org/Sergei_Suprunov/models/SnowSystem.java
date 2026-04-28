@@ -223,7 +223,8 @@ public class SnowSystem implements Model {
     }
     private void addSnowWithAvalanche(int row, int col, int depth) {
         if (depth > 7) {
-            snowGrid[row][col] += 0.04f;
+            if(snowGrid[row][col] < 3.0f){
+            snowGrid[row][col] += 0.04f;}
             return;
         }
 
