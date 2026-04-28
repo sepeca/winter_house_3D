@@ -7,7 +7,7 @@ import static org.lwjgl.opengl.GL20.GL_COORD_REPLACE;
 import org.Sergei_Suprunov.lwjglutils.OGLTexture2D;
 
 public class SnowSystem implements Model {
-
+    private OGLTexture2D groundSnowTexture;
     private int MAX_PARTICLES = 3000;
     private float[] x = new float[MAX_PARTICLES];
     private float[] y = new float[MAX_PARTICLES];
@@ -48,6 +48,7 @@ public class SnowSystem implements Model {
     public SnowSystem() {
         try {
             snowflakeTexture = new OGLTexture2D("textures/snowflake.png");
+            groundSnowTexture = new OGLTexture2D("textures/snow.png");
         } catch (Exception e) {
             System.err.println("Pozor, textura nebyla nalezena, budou prezentovany jako bile tecky");
         }
@@ -96,7 +97,7 @@ public class SnowSystem implements Model {
 
                     if (col >= 0 && col < ROOF_GRID_SIZE && row >= 0 && row < ROOF_GRID_SIZE) {
                         if (roofSnowGrid[row][col] < 1.0f) {
-                            roofSnowGrid[row][col] += 0.05f;
+                            roofSnowGrid[row][col] += 0.08f;
                         }
                     }
                 }
@@ -109,36 +110,43 @@ public class SnowSystem implements Model {
 
         if (px > -4.8f && px < 4.8f && pz > -9.8f && pz < -0.2f) {
 
-            float height = 7.2f - (Math.abs(px) / 4.8f) * (7.2f - 3.36f);
-            return height;
+            return 7.2f - (Math.abs(px) / 4.8f) * (7.2f - 3.36f);
         }
         return 0.0f;
     }
 
     @Override
     public void draw() {
-        glDisable(GL_TEXTURE_2D);
+        glEnable(GL_TEXTURE_2D);
+        groundSnowTexture.bind();
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
         float cellSize = (WORLD_SIZE * 2) / GRID_SIZE;
-        float h = 0.01f;
+        float drawSize = cellSize * 1.5f;
 
-        glBegin(GL_QUADS);
         for (int row = 0; row < GRID_SIZE; row++) {
             for (int col = 0; col < GRID_SIZE; col++) {
                 float opacity = snowGrid[row][col];
-
                 if (opacity > 0.0f) {
-                    glColor4f(1.0f, 1.0f, 1.0f, opacity);
-
                     float cellX = -WORLD_SIZE + col * cellSize;
                     float cellZ = -WORLD_SIZE + row * cellSize;
 
-                    glVertex3f(cellX, h, cellZ);
-                    glVertex3f(cellX + cellSize, h, cellZ);
-                    glVertex3f(cellX + cellSize, h, cellZ + cellSize);
-                    glVertex3f(cellX, h, cellZ + cellSize);
+                    glPushMatrix();
+                    glTranslatef(cellX + cellSize/2, 0.01f, cellZ + cellSize/2);
+
+                    glRotatef((row * col * 123) % 360, 0, 1, 0);
+
+                    glColor4f(1.0f, 1.0f, 1.0f, opacity);
+
+                    glBegin(GL_QUADS);
+
+                    glTexCoord2f(0, 0); glVertex3f(-drawSize/2, 0, -drawSize/2);
+                    glTexCoord2f(1, 0); glVertex3f( drawSize/2, 0, -drawSize/2);
+                    glTexCoord2f(1, 1); glVertex3f( drawSize/2, 0,  drawSize/2);
+                    glTexCoord2f(0, 1); glVertex3f(-drawSize/2, 0,  drawSize/2);
+                    glEnd();
+                    glPopMatrix();
                 }
             }
         }

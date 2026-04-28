@@ -10,6 +10,7 @@ public class House implements Model {
     private OGLTexture2D textureRoofFronton;
     private OGLTexture2D textureDoor;
     private float[][] roofSnowGrid;
+    private OGLTexture2D textureSnowPatch;
 
     public void setRoofSnowGrid(float[][] grid) {
         this.roofSnowGrid = grid;
@@ -25,6 +26,7 @@ public class House implements Model {
             textureRoofSlopes = new OGLTexture2D("textures/roof.jpg");
             textureRoofFronton = new OGLTexture2D("textures/roof_fronton.jpg");
             textureDoor = new OGLTexture2D("textures/door.jpg");
+            textureSnowPatch = new OGLTexture2D("textures/snow.png");
         } catch (Exception e) {
             System.err.println("Textury domu nebyly nalezeny, budou pouzity zakladni barvy");
         }
@@ -93,7 +95,9 @@ public class House implements Model {
         if (roofSnowGrid != null) {
             glEnable(GL_BLEND);
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-            glDisable(GL_TEXTURE_2D);
+
+            glEnable(GL_TEXTURE_2D);
+            textureSnowPatch.bind();
 
             glPushMatrix();
             glTranslatef(0.0f, 0.01f, 0.0f);
@@ -109,15 +113,26 @@ public class House implements Model {
                     if (opacity > 0.0f) {
                         glColor4f(1.0f, 1.0f, 1.0f, opacity);
 
-                        float startX = -1.2f + col * cellW;
-                        float endX = startX + cellW;
-                        float startZ = -1.2f + row * cellD;
-                        float endZ = startZ + cellD;
+                        float cx = -1.2f + col * cellW + (cellW / 2.0f);
+                        float cz = -1.2f + row * cellD + (cellD / 2.0f);
+                        float extW = cellW * 0.75f;
+                        float extD = cellD * 0.75f;
 
-                        glVertex3f(startX, getLocalRoofY(startX), startZ);
-                        glVertex3f(startX, getLocalRoofY(startX), endZ);
-                        glVertex3f(endX,   getLocalRoofY(endX),   endZ);
-                        glVertex3f(endX,   getLocalRoofY(endX),   startZ);
+                        float x1 = cx - extW;
+                        float x2 = cx + extW;
+                        float z1 = cz - extD;
+                        float z2 = cz + extD;
+
+                        int rot = (row * 31 + col * 17) % 4;
+                        float u1=0, v1=0, u2=1, v2=0, u3=1, v3=1, u4=0, v4=1;
+                        if (rot == 1) { u1=0; v1=1; u2=0; v2=0; u3=1; v3=0; u4=1; v4=1; }
+                        else if (rot == 2) { u1=1; v1=1; u2=0; v2=1; u3=0; v3=0; u4=1; v4=0; }
+                        else if (rot == 3) { u1=1; v1=0; u2=1; v2=1; u3=0; v3=1; u4=0; v4=0; }
+
+                        glTexCoord2f(u1, v1); glVertex3f(x1, getLocalRoofY(x1), z1);
+                        glTexCoord2f(u2, v2); glVertex3f(x1, getLocalRoofY(x1), z2);
+                        glTexCoord2f(u3, v3); glVertex3f(x2, getLocalRoofY(x2), z2);
+                        glTexCoord2f(u4, v4); glVertex3f(x2, getLocalRoofY(x2), z1);
                     }
                 }
             }
@@ -125,6 +140,7 @@ public class House implements Model {
 
             glPopMatrix();
             glDisable(GL_BLEND);
+            glDisable(GL_TEXTURE_2D);
         }
     }
 
