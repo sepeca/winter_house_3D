@@ -7,7 +7,6 @@ import static org.lwjgl.opengl.GL20.GL_COORD_REPLACE;
 import org.Sergei_Suprunov.lwjglutils.OGLTexture2D;
 
 public class SnowSystem implements Model {
-    private OGLTexture2D groundSnowTexture;
     private int MAX_PARTICLES = 3000;
     private float[] x = new float[MAX_PARTICLES];
     private float[] y = new float[MAX_PARTICLES];
@@ -18,37 +17,19 @@ public class SnowSystem implements Model {
 
     private final int GRID_SIZE = 600;
     private final float WORLD_SIZE = 20.0f;
-    private final float[][] snowGrid = new float[GRID_SIZE][GRID_SIZE];
+    private final float[][] snowGrid = new float[GRID_SIZE+1][GRID_SIZE+1];
     private float cloudX = 0.0f;
     private float cloudZ = 0.0f;
-
-    public int getMAX_PARTICLES() {
-        return MAX_PARTICLES;
-    }
-
-    public float getCloudSize() {
-        return cloudSize;
-    }
-
-    public void setCloudSize(float cloudSize) {
-        this.cloudSize = cloudSize;
-    }
-
     private float cloudSize = 6.0f;
     private final float cloudHeight = 15.0f;
-
     private final int ROOF_GRID_SIZE = 48;
     private float[][] roofSnowGrid = new float[ROOF_GRID_SIZE][ROOF_GRID_SIZE];
     private OGLTexture2D snowflakeTexture;
-
-    public float[][] getRoofSnowGrid() {
-        return roofSnowGrid;
-    }
+    private final float MAX_SNOW_HEIGHT = 1.0f;
 
     public SnowSystem() {
         try {
             snowflakeTexture = new OGLTexture2D("textures/snowflake.png");
-            groundSnowTexture = new OGLTexture2D("textures/snow.png");
         } catch (Exception e) {
             System.err.println("Pozor, textura nebyla nalezena, budou prezentovany jako bile tecky");
         }
@@ -82,14 +63,12 @@ public class SnowSystem implements Model {
 
             if (y[i] <= surfaceY) {
 
-                if (surfaceY == 0.0f) {
+                if (!isOverRoof(x[i],z[i])) {
                     int col = (int) (((x[i] + WORLD_SIZE) / (WORLD_SIZE * 2)) * GRID_SIZE);
                     int row = (int) (((z[i] + WORLD_SIZE) / (WORLD_SIZE * 2)) * GRID_SIZE);
 
                     if (col >= 0 && col < GRID_SIZE && row >= 0 && row < GRID_SIZE) {
-                        if (snowGrid[row][col] < 1.0f) {
-                            snowGrid[row][col] += 0.05f;
-                        }
+                        addSnowWithAvalanche(row, col, 0);
                     }
                 } else {
                     int col = (int) (((x[i] + 4.8f) / 9.6f) * ROOF_GRID_SIZE);
@@ -108,52 +87,49 @@ public class SnowSystem implements Model {
     }
     private float getSurfaceHeight(float px, float pz) {
 
-        if (px > -4.8f && px < 4.8f && pz > -9.8f && pz < -0.2f) {
+        if (isOverRoof(px, pz)) {
 
             return 7.2f - (Math.abs(px) / 4.8f) * (7.2f - 3.36f);
+        }
+        int col = (int) (((px + WORLD_SIZE) / (WORLD_SIZE * 2)) * GRID_SIZE);
+        int row = (int) (((pz + WORLD_SIZE) / (WORLD_SIZE * 2)) * GRID_SIZE);
+        if (col >= 0 && col <= GRID_SIZE && row >= 0 && row <= GRID_SIZE) {
+            return snowGrid[row][col];
         }
         return 0.0f;
     }
 
     @Override
     public void draw() {
-        glEnable(GL_TEXTURE_2D);
-        groundSnowTexture.bind();
+        glDisable(GL_TEXTURE_2D);
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
         float cellSize = (WORLD_SIZE * 2) / GRID_SIZE;
-        float drawSize = cellSize * 1.5f;
 
         for (int row = 0; row < GRID_SIZE; row++) {
-            for (int col = 0; col < GRID_SIZE; col++) {
-                float opacity = snowGrid[row][col];
-                if (opacity > 0.0f) {
-                    float cellX = -WORLD_SIZE + col * cellSize;
-                    float cellZ = -WORLD_SIZE + row * cellSize;
+            glBegin(GL_TRIANGLE_STRIP);
+            for (int col = 0; col <= GRID_SIZE; col++) {
+                float cellX = -WORLD_SIZE + col * cellSize;
+                float cellZ1 = -WORLD_SIZE + row * cellSize;
+                float cellZ2 = -WORLD_SIZE + (row + 1) * cellSize;
 
-                    glPushMatrix();
-                    glTranslatef(cellX + cellSize/2, 0.01f, cellZ + cellSize/2);
+                float y1 = snowGrid[row][col];
+                float y2 = snowGrid[row + 1][col];
 
-                    glRotatef((row * col * 123) % 360, 0, 1, 0);
+                float alpha1 = Math.min(y1 * 6.0f, 1.0f);
+                float alpha2 = Math.min(y2 * 6.0f, 1.0f);
 
-                    glColor4f(1.0f, 1.0f, 1.0f, opacity);
+                glColor4f(1.0f, 1.0f, 1.0f, alpha1);
+                glVertex3f(cellX, y1 + 0.01f, cellZ1);
 
-                    glBegin(GL_QUADS);
-
-                    glTexCoord2f(0, 0); glVertex3f(-drawSize/2, 0, -drawSize/2);
-                    glTexCoord2f(1, 0); glVertex3f( drawSize/2, 0, -drawSize/2);
-                    glTexCoord2f(1, 1); glVertex3f( drawSize/2, 0,  drawSize/2);
-                    glTexCoord2f(0, 1); glVertex3f(-drawSize/2, 0,  drawSize/2);
-                    glEnd();
-                    glPopMatrix();
-                }
+                glColor4f(1.0f, 1.0f, 1.0f, alpha2);
+                glVertex3f(cellX, y2 + 0.01f, cellZ2);
             }
+            glEnd();
         }
-        glEnd();
         glDisable(GL_BLEND);
 
-        glDisable(GL_TEXTURE_2D);
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
@@ -227,5 +203,74 @@ public class SnowSystem implements Model {
         }
 
         this.MAX_PARTICLES = newMax;
+    }
+    public int getMAX_PARTICLES() {
+        return MAX_PARTICLES;
+    }
+
+    public float getCloudSize() {
+        return cloudSize;
+    }
+
+    public void setCloudSize(float cloudSize) {
+        this.cloudSize = cloudSize;
+    }
+    public float[][] getRoofSnowGrid() {
+        return roofSnowGrid;
+    }
+    private boolean isOverRoof(float px, float pz) {
+        return (px > -4.8f && px < 4.8f && pz > -9.8f && pz < -0.2f);
+    }
+    private void addSnowWithAvalanche(int row, int col, int depth) {
+        if (depth > 7) {
+            snowGrid[row][col] += 0.04f;
+            return;
+        }
+
+        float currentHeight = snowGrid[row][col];
+        float minHeight = currentHeight;
+        int targetRow = row;
+        int targetCol = col;
+
+        int[][] directions = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
+
+        for (int[] dir : directions) {
+            int nRow = row + dir[0];
+            int nCol = col + dir[1];
+
+            if (nRow >= 0 && nRow <= GRID_SIZE && nCol >= 0 && nCol <= GRID_SIZE) {
+                float neighborHeight = snowGrid[nRow][nCol];
+
+                if (neighborHeight < minHeight) {
+                    minHeight = neighborHeight;
+                    targetRow = nRow;
+                    targetCol = nCol;
+                }
+            }
+        }
+
+        if ((currentHeight - minHeight) >= 0.1f) {
+            addSnowWithAvalanche(targetRow, targetCol, depth + 1);
+            return;
+        }
+        if(currentHeight < MAX_SNOW_HEIGHT){snowGrid[row][col] += 0.04f;}
+        else {
+
+            int randomDir = random.nextInt(4);
+            int nRow = row + directions[randomDir][0];
+            int nCol = col + directions[randomDir][1];
+            if (nRow >= 0 && nRow < snowGrid.length && nCol >= 0 && nCol < snowGrid[0].length) {
+
+                if (snowGrid[nRow][nCol] <= currentHeight) {
+                    addSnowWithAvalanche(nRow, nCol, depth + 1);
+                } else {
+
+                    snowGrid[row][col] += 0.04f;
+                }
+            } else {
+                snowGrid[row][col] += 0.04f;
+            }
+
+        }
     }
 }
