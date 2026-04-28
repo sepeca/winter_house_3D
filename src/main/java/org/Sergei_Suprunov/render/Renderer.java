@@ -110,6 +110,18 @@ public class Renderer {
             if (pressedKeys.contains(GLFW_KEY_DOWN)) snowSystem.moveCloud(0, cloudSpeed);
             if (pressedKeys.contains(GLFW_KEY_LEFT)) snowSystem.moveCloud(-cloudSpeed, 0);
             if (pressedKeys.contains(GLFW_KEY_RIGHT)) snowSystem.moveCloud(cloudSpeed, 0);
+            if (pressedKeys.contains(GLFW_KEY_I)) {
+                snowSystem.setCloudSize(Math.max(1.0f, snowSystem.getCloudSize() - 0.2f));
+            }
+            if (pressedKeys.contains(GLFW_KEY_O)) {
+                snowSystem.setCloudSize(Math.min(16.0f, snowSystem.getCloudSize() + 0.2f));
+            }
+            if (pressedKeys.contains(GLFW_KEY_K)) {
+                snowSystem.setMAX_PARTICLES(Math.max(1000, snowSystem.getMAX_PARTICLES() - 50));
+            }
+            if (pressedKeys.contains(GLFW_KEY_L)) {
+                snowSystem.setMAX_PARTICLES(Math.min(5000, snowSystem.getMAX_PARTICLES() + 50));
+            }
         }
     }
 

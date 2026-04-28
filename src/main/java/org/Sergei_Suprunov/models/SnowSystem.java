@@ -2,14 +2,17 @@ package org.Sergei_Suprunov.models;
 
 import static org.lwjgl.opengl.GL11.*;
 import java.util.Random;
+import static org.lwjgl.opengl.GL20.GL_POINT_SPRITE;
+import static org.lwjgl.opengl.GL20.GL_COORD_REPLACE;
+import org.Sergei_Suprunov.lwjglutils.OGLTexture2D;
 
 public class SnowSystem implements Model {
 
-    private final int MAX_PARTICLES = 3000;
-    private final float[] x = new float[MAX_PARTICLES];
-    private final float[] y = new float[MAX_PARTICLES];
-    private final float[] z = new float[MAX_PARTICLES];
-    private final float[] speed = new float[MAX_PARTICLES];
+    private int MAX_PARTICLES = 3000;
+    private float[] x = new float[MAX_PARTICLES];
+    private float[] y = new float[MAX_PARTICLES];
+    private float[] z = new float[MAX_PARTICLES];
+    private float[] speed = new float[MAX_PARTICLES];
 
     private final Random random = new Random();
 
@@ -18,17 +21,36 @@ public class SnowSystem implements Model {
     private final float[][] snowGrid = new float[GRID_SIZE][GRID_SIZE];
     private float cloudX = 0.0f;
     private float cloudZ = 0.0f;
-    private final float cloudSize = 6.0f;
+
+    public int getMAX_PARTICLES() {
+        return MAX_PARTICLES;
+    }
+
+    public float getCloudSize() {
+        return cloudSize;
+    }
+
+    public void setCloudSize(float cloudSize) {
+        this.cloudSize = cloudSize;
+    }
+
+    private float cloudSize = 6.0f;
     private final float cloudHeight = 15.0f;
 
     private final int ROOF_GRID_SIZE = 48;
     private float[][] roofSnowGrid = new float[ROOF_GRID_SIZE][ROOF_GRID_SIZE];
+    private OGLTexture2D snowflakeTexture;
 
     public float[][] getRoofSnowGrid() {
         return roofSnowGrid;
     }
 
     public SnowSystem() {
+        try {
+            snowflakeTexture = new OGLTexture2D("textures/snowflake.png");
+        } catch (Exception e) {
+            System.err.println("Pozor, textura nebyla nalezena, budou prezentovany jako bile tecky");
+        }
         for (int i = 0; i < MAX_PARTICLES; i++) {
             resetParticle(i, true);
         }
@@ -143,8 +165,22 @@ public class SnowSystem implements Model {
         glLineWidth(1.0f);
         glDisable(GL_BLEND);
 
-        glDisable(GL_TEXTURE_2D);
-        glPointSize(3.0f);
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+        if (snowflakeTexture != null) {
+            glEnable(GL_TEXTURE_2D);
+            snowflakeTexture.bind();
+
+            glEnable(GL_POINT_SPRITE);
+            glTexEnvi(GL_POINT_SPRITE, GL_COORD_REPLACE, GL_TRUE);
+
+            glPointSize(12.0f);
+        } else {
+            glDisable(GL_TEXTURE_2D);
+            glPointSize(3.0f);
+        }
+
         glColor3f(1.0f, 1.0f, 1.0f);
 
         glBegin(GL_POINTS);
@@ -152,5 +188,36 @@ public class SnowSystem implements Model {
             glVertex3f(x[i], y[i], z[i]);
         }
         glEnd();
+
+        if (snowflakeTexture != null) {
+            glDisable(GL_POINT_SPRITE);
+            glDisable(GL_TEXTURE_2D);
+        }
+        glDisable(GL_BLEND);
+    }
+    public void setMAX_PARTICLES(int newMax) {
+        float[] newX = new float[newMax];
+        float[] newY = new float[newMax];
+        float[] newZ = new float[newMax];
+        float[] newSpeed = new float[newMax];
+
+        int countToCopy = Math.min(this.MAX_PARTICLES, newMax);
+        System.arraycopy(x, 0, newX, 0, countToCopy);
+        System.arraycopy(y, 0, newY, 0, countToCopy);
+        System.arraycopy(z, 0, newZ, 0, countToCopy);
+        System.arraycopy(speed, 0, newSpeed, 0, countToCopy);
+
+        this.x = newX;
+        this.y = newY;
+        this.z = newZ;
+        this.speed = newSpeed;
+
+        if (newMax > this.MAX_PARTICLES) {
+            for (int i = this.MAX_PARTICLES; i < newMax; i++) {
+                resetParticle(i, true);
+            }
+        }
+
+        this.MAX_PARTICLES = newMax;
     }
 }

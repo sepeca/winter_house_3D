@@ -7,7 +7,7 @@ import static org.lwjgl.opengl.GL11.*;
 public class Skybox implements Model {
 
     private OGLTexture2D texture;
-    private float exposure = 2.0f;
+    private float exposure = 1.0f; //Nedava smysl delat vyse, color3f nedokaze plnocenne zobrazit HDR
     public Skybox() {
         try {
             texture = new OGLTexture2D();
