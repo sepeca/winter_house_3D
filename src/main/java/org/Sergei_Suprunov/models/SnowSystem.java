@@ -13,7 +13,7 @@ public class SnowSystem implements Model {
 
     private final Random random = new Random();
 
-    private final int GRID_SIZE = 80;
+    private final int GRID_SIZE = 600;
     private final float WORLD_SIZE = 20.0f;
     private final float[][] snowGrid = new float[GRID_SIZE][GRID_SIZE];
     private float cloudX = 0.0f;
@@ -21,7 +21,7 @@ public class SnowSystem implements Model {
     private final float cloudSize = 6.0f;
     private final float cloudHeight = 15.0f;
 
-    private final int ROOF_GRID_SIZE = 24;
+    private final int ROOF_GRID_SIZE = 48;
     private float[][] roofSnowGrid = new float[ROOF_GRID_SIZE][ROOF_GRID_SIZE];
 
     public float[][] getRoofSnowGrid() {
@@ -65,7 +65,7 @@ public class SnowSystem implements Model {
 
                     if (col >= 0 && col < GRID_SIZE && row >= 0 && row < GRID_SIZE) {
                         if (snowGrid[row][col] < 1.0f) {
-                            snowGrid[row][col] += 0.01f;
+                            snowGrid[row][col] += 0.05f;
                         }
                     }
                 } else {
@@ -74,12 +74,12 @@ public class SnowSystem implements Model {
 
                     if (col >= 0 && col < ROOF_GRID_SIZE && row >= 0 && row < ROOF_GRID_SIZE) {
                         if (roofSnowGrid[row][col] < 1.0f) {
-                            roofSnowGrid[row][col] += 0.01f;
+                            roofSnowGrid[row][col] += 0.05f;
                         }
                     }
                 }
 
-                resetParticle(i, false);
+                resetParticle(i, true);
             }
         }
     }

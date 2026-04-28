@@ -20,10 +20,17 @@ import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL20.*;
 import static org.lwjgl.stb.STBImage.*;
 
+import static org.lwjgl.opengl.GL30.GL_RGB16F;
+import org.lwjgl.system.MemoryStack;
 public class OGLTexture2D implements OGLTexture {
-	private final int textureID;
-	private final int width, height;
-	
+	private int textureID;
+	private int width;
+	private int height;
+
+	public OGLTexture2D() {
+
+	}
+
 	public static class Viewer implements OGLTexture.Viewer {
 		protected final int shaderProgram;
 		protected final OGLBuffers buffers;
@@ -400,6 +407,33 @@ public class OGLTexture2D implements OGLTexture {
 		//if (glIsTexture(textureID))
 		//	glDeleteTextures(textureID);
 	}
-	
+	public void loadHDR(String fileName) throws IOException {
+		try (MemoryStack stack = MemoryStack.stackPush()) {
+			IntBuffer width = stack.mallocInt(1);
+			IntBuffer height = stack.mallocInt(1);
+			IntBuffer comp = stack.mallocInt(1);
 
+			ByteBuffer imageBuffer = ioResourceToByteBuffer(fileName, 8 * 1024 * 1024);
+
+			FloatBuffer data = stbi_loadf_from_memory(imageBuffer, width, height, comp, 3);
+			if (data == null) {
+				throw new IOException("Failed to load HDR image: " + stbi_failure_reason());
+			}
+
+			this.width = width.get();
+			this.height = height.get();
+
+			this.textureID = glGenTextures();
+			glBindTexture(GL_TEXTURE_2D, textureID);
+
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, this.width, this.height, 0, GL_RGB, GL_FLOAT, data);
+
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+			stbi_image_free(data);
+		}
+	}
 }
