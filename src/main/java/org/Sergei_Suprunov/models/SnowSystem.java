@@ -25,7 +25,7 @@ public class SnowSystem implements Model {
     private final int ROOF_GRID_SIZE = 48;
     private float[][] roofSnowGrid = new float[ROOF_GRID_SIZE][ROOF_GRID_SIZE];
     private OGLTexture2D snowflakeTexture;
-    private final float MAX_SNOW_HEIGHT = 1.0f;
+    private final float MAX_SNOW_HEIGHT = 3.0f;
 
     public SnowSystem() {
         try {
@@ -223,7 +223,7 @@ public class SnowSystem implements Model {
     }
     private void addSnowWithAvalanche(int row, int col, int depth) {
         if (depth > 7) {
-            if(snowGrid[row][col] < 3.0f){
+            if(snowGrid[row][col] < MAX_SNOW_HEIGHT){
             snowGrid[row][col] += 0.04f;}
             return;
         }
@@ -234,14 +234,12 @@ public class SnowSystem implements Model {
         int targetCol = col;
 
         int[][] directions = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
-
         for (int[] dir : directions) {
             int nRow = row + dir[0];
             int nCol = col + dir[1];
 
             if (nRow >= 0 && nRow <= GRID_SIZE && nCol >= 0 && nCol <= GRID_SIZE) {
                 float neighborHeight = snowGrid[nRow][nCol];
-
                 if (neighborHeight < minHeight) {
                     minHeight = neighborHeight;
                     targetRow = nRow;
@@ -249,7 +247,6 @@ public class SnowSystem implements Model {
                 }
             }
         }
-
         if ((currentHeight - minHeight) >= 0.1f) {
             addSnowWithAvalanche(targetRow, targetCol, depth + 1);
             return;
@@ -261,15 +258,9 @@ public class SnowSystem implements Model {
             int nRow = row + directions[randomDir][0];
             int nCol = col + directions[randomDir][1];
             if (nRow >= 0 && nRow < snowGrid.length && nCol >= 0 && nCol < snowGrid[0].length) {
-
                 if (snowGrid[nRow][nCol] <= currentHeight) {
                     addSnowWithAvalanche(nRow, nCol, depth + 1);
-                } else {
-
-                    snowGrid[row][col] += 0.04f;
                 }
-            } else {
-                snowGrid[row][col] += 0.04f;
             }
 
         }
