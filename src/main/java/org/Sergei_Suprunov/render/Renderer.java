@@ -18,6 +18,9 @@ public class Renderer {
 
     private int width = 800;
     private int height = 600;
+    private int frameCount = 0;
+    private int currentFps = 0;
+    private double lastFpsTime = 0.0;
 
     private GLCamera camera;
     private Skybox skybox;
@@ -52,6 +55,18 @@ public class Renderer {
         double now = glfwGetTime();
         float dt = (float) (now - lastFrameTime);
         lastFrameTime = now;
+
+        if (lastFpsTime == 0.0) {
+            lastFpsTime = now;
+        }
+
+        frameCount++;
+
+        if (now - lastFpsTime >= 1.0) {
+            currentFps = frameCount;
+            frameCount = 0;
+            lastFpsTime = now;
+        }
 
         handleContinuousInput(dt);
 
@@ -94,6 +109,23 @@ public class Renderer {
             snowSystem.update(dt);
             snowSystem.draw();
         }
+
+        setOrthographicProjection();
+
+
+        TextRenderer.drawText("Zimni Scena 3D Sergei Suprunov UHK 2025/2026", 10, 20, 2.0f, 1.0f, 1.0f, 0.0f);
+
+        TextRenderer.drawText("Ovladani:", 10, 60, 1.5f, 1.0f, 1.0f, 1.0f);
+        TextRenderer.drawText("WSAD - Pohyb kamery", 10, 80, 1.0f, 0.8f, 0.8f, 0.8f);
+        TextRenderer.drawText("Mys - Rozhlizeni", 10, 100, 1.0f, 0.8f, 0.8f, 0.8f);
+        TextRenderer.drawText("Esc - Konec", 10, 120, 1.0f, 0.8f, 0.8f, 0.8f);
+
+        TextRenderer.drawText("I / O Pocet vlocek: " + snowSystem.getMAX_PARTICLES()+"/5000", 10, 150, 1.0f, 0.5f, 1.0f, 0.5f);
+        TextRenderer.drawText("K / L Velikost mraku: " + snowSystem.getCloudSize()+"/16", 10, 170, 1.0f, 0.5f, 1.0f, 0.5f);
+
+        TextRenderer.drawText("FPS: " + currentFps, 750, 20, 1.0f, 0.0f, 1.0f, 0.0f);
+
+        restorePerspectiveProjection();
     }
 
     private void handleContinuousInput(float dt) {
@@ -181,6 +213,25 @@ public class Renderer {
                 }
             }
         };
+    }
+
+    private void setOrthographicProjection() {
+        glMatrixMode(GL_PROJECTION);
+        glPushMatrix();
+        glLoadIdentity();
+        glOrtho(0, width, height, 0, -1, 1);
+
+        glMatrixMode(GL_MODELVIEW);
+        glPushMatrix();
+        glLoadIdentity();
+    }
+
+    private void restorePerspectiveProjection() {
+        glMatrixMode(GL_PROJECTION);
+        glPopMatrix();
+
+        glMatrixMode(GL_MODELVIEW);
+        glPopMatrix();
     }
 
 }
