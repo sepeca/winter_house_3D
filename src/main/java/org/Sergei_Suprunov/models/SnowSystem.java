@@ -1,12 +1,26 @@
 package org.Sergei_Suprunov.models;
 
 import static org.lwjgl.opengl.GL11.*;
+import java.nio.FloatBuffer;
 import java.util.Random;
 import static org.lwjgl.opengl.GL20.GL_POINT_SPRITE;
 import static org.lwjgl.opengl.GL20.GL_COORD_REPLACE;
+import static org.lwjgl.opengl.GL15.*;
 import org.Sergei_Suprunov.lwjglutils.OGLTexture2D;
+import org.lwjgl.BufferUtils;
 
 public class SnowSystem implements Model {
+    private final int vboId;
+    private final FloatBuffer snowBuffer;
+    private final float[][] snowSparkleMap;
+    private final float[][] snowBumpMap;
+    private final int DEPTH_LIMIT = 16;
+    private final int[][] directions = {
+            // Přimé sousedi
+            { 1,  0}, {-1,  0}, { 0,  1}, { 0, -1},
+            // Diagonalni sousedi
+            { 1,  1}, {-1, -1}, { 1, -1}, {-1,  1}
+    };
     private int MAX_PARTICLES = 3000;
     private float[] x = new float[MAX_PARTICLES];
     private float[] y = new float[MAX_PARTICLES];
@@ -26,7 +40,8 @@ public class SnowSystem implements Model {
     private float[][] roofSnowGrid = new float[ROOF_GRID_SIZE][ROOF_GRID_SIZE];
     private OGLTexture2D snowflakeTexture;
     private final float MAX_SNOW_HEIGHT = 3.0f;
-
+    private final int VERTICES_PER_ROW = (GRID_SIZE + 1) * 2;
+    private final int FLOATS_PER_VERTEX = 7;
     public SnowSystem() {
         try {
             snowflakeTexture = new OGLTexture2D("textures/snowflake.png");
@@ -36,6 +51,19 @@ public class SnowSystem implements Model {
         for (int i = 0; i < MAX_PARTICLES; i++) {
             resetParticle(i, true);
         }
+        snowSparkleMap = new float[GRID_SIZE + 1][GRID_SIZE + 1];
+        snowBumpMap = new float[GRID_SIZE + 1][GRID_SIZE + 1];
+        Random random = new Random();
+
+        for (int row = 0; row <= GRID_SIZE; row++) {
+            for (int col = 0; col <= GRID_SIZE; col++) {
+                snowSparkleMap[row][col] = 0.85f + random.nextFloat() * 0.15f;
+
+                snowBumpMap[row][col] = (random.nextFloat() - 0.5f) * 0.04f;
+            }
+        }
+        vboId = glGenBuffers();
+        snowBuffer = BufferUtils.createFloatBuffer(GRID_SIZE * VERTICES_PER_ROW * FLOATS_PER_VERTEX);
     }
 
     public void moveCloud(float dx, float dz) {
@@ -107,8 +135,9 @@ public class SnowSystem implements Model {
 
         float cellSize = (WORLD_SIZE * 2) / GRID_SIZE;
 
+        snowBuffer.clear();
+
         for (int row = 0; row < GRID_SIZE; row++) {
-            glBegin(GL_TRIANGLE_STRIP);
             for (int col = 0; col <= GRID_SIZE; col++) {
                 float cellX = -WORLD_SIZE + col * cellSize;
                 float cellZ1 = -WORLD_SIZE + row * cellSize;
@@ -117,21 +146,53 @@ public class SnowSystem implements Model {
                 float y1 = snowGrid[row][col];
                 float y2 = snowGrid[row + 1][col];
 
-                float alpha1 = Math.min(y1 * 6.0f, 1.0f);
-                float alpha2 = Math.min(y2 * 6.0f, 1.0f);
+                float alpha1 = Math.min(y1 * 7.0f, 1.0f);
+                float alpha2 = Math.min(y2 * 7.0f, 1.0f);
 
-                glColor4f(1.0f, 1.0f, 1.0f, alpha1);
-                glVertex3f(cellX, y1 + 0.01f, cellZ1);
+                float sparkle1 = snowSparkleMap[row][col];
+                float depthShade1 = 0.75f + 0.25f * Math.min(y1, 1.0f);
+                float r1 = sparkle1 * depthShade1 * 0.9f;
+                float g1 = sparkle1 * depthShade1 * 0.95f;
+                float b1 = sparkle1 * depthShade1 * 1.0f;
+                float bump1 = snowBumpMap[row][col];
 
-                glColor4f(1.0f, 1.0f, 1.0f, alpha2);
-                glVertex3f(cellX, y2 + 0.01f, cellZ2);
+                snowBuffer.put(r1).put(g1).put(b1).put(alpha1);
+                snowBuffer.put(cellX).put(y1 + 0.01f + bump1).put(cellZ1);
+
+                float sparkle2 = snowSparkleMap[row + 1][col];
+                float depthShade2 = 0.75f + 0.25f * Math.min(y2, 1.0f);
+                float r2 = sparkle2 * depthShade2 * 0.9f;
+                float g2 = sparkle2 * depthShade2 * 0.95f;
+                float b2 = sparkle2 * depthShade2 * 1.0f;
+                float bump2 = snowBumpMap[row + 1][col];
+
+                snowBuffer.put(r2).put(g2).put(b2).put(alpha2);
+                snowBuffer.put(cellX).put(y2 + 0.01f + bump2).put(cellZ2);
             }
-            glEnd();
         }
-        glDisable(GL_BLEND);
 
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        snowBuffer.flip();
+
+        glBindBuffer(GL_ARRAY_BUFFER, vboId);
+
+        glBufferData(GL_ARRAY_BUFFER, snowBuffer, GL_DYNAMIC_DRAW);
+
+        glEnableClientState(GL_COLOR_ARRAY);
+        glEnableClientState(GL_VERTEX_ARRAY);
+
+        int stride = 28;
+
+        glColorPointer(4, GL_FLOAT, stride, 0);
+
+        glVertexPointer(3, GL_FLOAT, stride, 16);
+
+        for (int row = 0; row < GRID_SIZE; row++) {
+            glDrawArrays(GL_TRIANGLE_STRIP, row * VERTICES_PER_ROW, VERTICES_PER_ROW);
+        }
+
+        glDisableClientState(GL_COLOR_ARRAY);
+        glDisableClientState(GL_VERTEX_ARRAY);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
 
         glLineWidth(3.0f);
         glColor4f(0.8f, 0.9f, 1.0f, 0.7f);
@@ -222,7 +283,7 @@ public class SnowSystem implements Model {
         return (px > -4.8f && px < 4.8f && pz > -9.8f && pz < -0.2f);
     }
     private void addSnowWithAvalanche(int row, int col, int depth) {
-        if (depth > 7) {
+        if (depth > DEPTH_LIMIT) {
             if(snowGrid[row][col] < MAX_SNOW_HEIGHT){
             snowGrid[row][col] += 0.04f;}
             return;
@@ -233,7 +294,6 @@ public class SnowSystem implements Model {
         int targetRow = row;
         int targetCol = col;
 
-        int[][] directions = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
         for (int[] dir : directions) {
             int nRow = row + dir[0];
             int nCol = col + dir[1];
@@ -247,14 +307,14 @@ public class SnowSystem implements Model {
                 }
             }
         }
-        if ((currentHeight - minHeight) >= 0.1f) {
+        if ((currentHeight - minHeight) >= 0.05f) {
             addSnowWithAvalanche(targetRow, targetCol, depth + 1);
             return;
         }
         if(currentHeight < MAX_SNOW_HEIGHT){snowGrid[row][col] += 0.04f;}
         else {
 
-            int randomDir = random.nextInt(4);
+            int randomDir = random.nextInt(8);
             int nRow = row + directions[randomDir][0];
             int nCol = col + directions[randomDir][1];
             if (nRow >= 0 && nRow < snowGrid.length && nCol >= 0 && nCol < snowGrid[0].length) {

@@ -113,17 +113,17 @@ public class Renderer {
         setOrthographicProjection();
 
 
-        TextRenderer.drawText("Zimni Scena 3D Sergei Suprunov UHK 2025/2026", 10, 20, 2.0f, 1.0f, 1.0f, 0.0f);
+        TextRenderer.drawText("Zimni Scena 3D Sergei Suprunov UHK 2025/2026", 10, 20, 2.0f, 1.2f, 1.0f, 0.0f);
 
         TextRenderer.drawText("Ovladani:", 10, 60, 1.5f, 1.0f, 1.0f, 1.0f);
-        TextRenderer.drawText("WSAD - Pohyb kamery", 10, 80, 1.0f, 0.8f, 0.8f, 0.8f);
-        TextRenderer.drawText("Mys - Rozhlizeni", 10, 100, 1.0f, 0.8f, 0.8f, 0.8f);
-        TextRenderer.drawText("Esc - Konec", 10, 120, 1.0f, 0.8f, 0.8f, 0.8f);
+        TextRenderer.drawText("WSAD - Pohyb kamery, šipky - pohyb mraku", 10, 80, 1.0f, 1.2f, 0.8f, 0.8f);
+        TextRenderer.drawText("Mys - Rozhlizeni", 10, 100, 1.2f, 0.8f, 0.8f, 0.8f);
+        TextRenderer.drawText("Esc - Konec", 10, 120, 1.2f, 0.8f, 0.8f, 0.8f);
 
-        TextRenderer.drawText("I / O Pocet vlocek: " + snowSystem.getMAX_PARTICLES()+"/5000", 10, 150, 1.0f, 0.5f, 1.0f, 0.5f);
-        TextRenderer.drawText("K / L Velikost mraku: " + snowSystem.getCloudSize()+"/16", 10, 170, 1.0f, 0.5f, 1.0f, 0.5f);
+        TextRenderer.drawText("I / O Pocet vlocek: " + snowSystem.getMAX_PARTICLES()+"/5000", 10, 150, 1.2f, 0.5f, 1.0f, 0.5f);
+        TextRenderer.drawText("K / L Velikost mraku: " + snowSystem.getCloudSize()+"/16", 10, 170, 1.2f, 0.5f, 1.0f, 0.5f);
 
-        TextRenderer.drawText("FPS: " + currentFps, 750, 20, 1.0f, 0.0f, 1.0f, 0.0f);
+        TextRenderer.drawText("FPS: " + currentFps, 10, 190, 1.2f, 0.0f, 1.0f, 0.0f);
 
         restorePerspectiveProjection();
     }
