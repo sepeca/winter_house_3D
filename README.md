@@ -1,4 +1,4 @@
-[CZ verze]([url](https://github.com/sepeca/winter_house_3D/blob/main/README_CZ.md)) 
+[🇨🇿 Česká verze](https://github.com/sepeca/winter_house_3D/blob/main/README_CZ.md) 
 # ❄️ Winter Scene 3D
 An interactive 3D simulation of a winter landscape featuring dynamic snowfall and snow accumulation. The project was built in Java using the LWJGL (OpenGL) library as a semester project (University of Hradec Králové 2025/2026).
 <img width="800" height="419" alt="2026-05-1716-19-38-ezgif com-video-to-gif-converter (2)" src="https://github.com/user-attachments/assets/57e9d491-4550-4093-a6d8-6d7a2de36144" />
